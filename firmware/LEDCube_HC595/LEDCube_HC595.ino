@@ -19,6 +19,14 @@
  * A3           PC3       HC_595_SRCLK (clock)
  * 
  */
+
+//Pin connected to ST_CP of 74HC595
+int latchPin = 8;
+//Pin connected to SH_CP of 74HC595
+int clockPin = A3;
+////Pin connected to DS of 74HC595
+int dataPin = 2;
+
 void setup() {
   pinMode(2,OUTPUT);
   pinMode(3,OUTPUT);
@@ -35,12 +43,42 @@ void setup() {
   pinMode(A3,OUTPUT);
 
 
-  digitalWrite(9, LOW); 
+  digitalWrite(9, LOW);
+  
+  digitalWrite(A0, LOW);
+  digitalWrite(A1, LOW);
+  digitalWrite(A2, LOW);
 
 }
+uint8_t con = 0;
+uint8_t auxportc;
 
 void loop() {
-  // put your main code here, to run repeatedly:
+
+  auxportc = PORTC & 0xF8;
+
+  PORTC = auxportc | con;
+  con++;
+
+  if (con > 5) {
+    con = 0;
+  }
+
+    // count from 0 to 255 and display the number 
+  // on the LEDs
+  for (int numberToDisplay = 0; numberToDisplay < 64; numberToDisplay++) {
+    // take the latchPin low so 
+    // the LEDs don't change while you're sending in bits:
+    digitalWrite(latchPin, LOW);
+    // shift out the bits:
+    shiftOut(dataPin, clockPin, MSBFIRST, numberToDisplay);  
+
+    //take the latch pin high so the LEDs will light up:
+    digitalWrite(latchPin, HIGH);
+    // pause before next value:
+    delay(1);
+  }
+    
 
 }
 
@@ -49,21 +87,32 @@ void Bus_Shift_Out(uint8_t data0, uint8_t data1,
                    uint8_t data4, uint8_t data5) {
 
   uint8_t cont = 0;
+  uint8_t auxData = 0;
   
   uint8_t auxPORT = PORTD;
-  auxPORT = auxPORT & 0x03;
+  auxPORT = auxPORT & 0x03; //clear data PORT
   
-  data0 = data0 & 0x3F;
-  data0 = data0 << 2;
+  for(cont = 0; cont < 6; cont ++) {
+    auxData = data0 >> cont;
+    auxData = data0 & 0x01;
 
-  auxPORT = auxPORT | data0;
+    //fazer para os outros chips antes de escreer no PORTD
 
-  PORTD = auxPORT;
+    auxData = auxData << 2; // a partir do D2 ate' D7
+    
+    PORTD = auxPORT | auxData; // escreve no port
 
+    delay(1);
 
+    // gera um pulso de clock
 
+    digitalWrite(A3, HIGH);
+    delay(1);
+    digitalWrite(A3, LOW);
+    
+  }
 
-
+  // gera um pulso para colocar os dados na saida do hc595
   digitalWrite(8, HIGH); 
   delay(1);
   digitalWrite(8, LOW); 
