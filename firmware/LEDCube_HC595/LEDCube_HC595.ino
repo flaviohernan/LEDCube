@@ -27,6 +27,10 @@ int clockPin = A3;
 ////Pin connected to DS of 74HC595
 int dataPin = 2;
 
+int led = 9;           // the PWM pin the LED is attached to
+int brightness = 0;    // how bright the LED is
+int fadeAmount = 5;    // how many points to fade the LED by
+
 void setup() {
   pinMode(2,OUTPUT);
   pinMode(3,OUTPUT);
@@ -71,12 +75,29 @@ void loop() {
     // the LEDs don't change while you're sending in bits:
     digitalWrite(latchPin, LOW);
     // shift out the bits:
-    shiftOut(dataPin, clockPin, MSBFIRST, numberToDisplay);  
+    shiftOut(dataPin, clockPin, MSBFIRST, numberToDisplay);
+    shiftOut(3, clockPin, MSBFIRST, numberToDisplay);
+    shiftOut(4, clockPin, MSBFIRST, numberToDisplay);
+    shiftOut(5, clockPin, MSBFIRST, numberToDisplay);
+    shiftOut(6, clockPin, MSBFIRST, numberToDisplay);
+    shiftOut(7, clockPin, MSBFIRST, numberToDisplay);
 
     //take the latch pin high so the LEDs will light up:
     digitalWrite(latchPin, HIGH);
     // pause before next value:
     delay(1);
+  }
+
+
+  // set the brightness of pin 9:
+  analogWrite(led, brightness);
+
+  // change the brightness for next time through the loop:
+  brightness = brightness + fadeAmount;
+
+  // reverse the direction of the fading at the ends of the fade:
+  if (brightness <= 2 || brightness >= 250) {
+    fadeAmount = -fadeAmount;
   }
     
 
